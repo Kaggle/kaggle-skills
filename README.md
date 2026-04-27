@@ -1,35 +1,39 @@
-# New Project Template
+# Skills
 
-This repository contains a template that can be used to seed a repository for a
-new Google open source project.
+Skills are folders of instructions, scripts, and resources that agnets can use to perform specialized tasks.
 
-See [go/releasing](http://go/releasing) (available externally at
-https://opensource.google/documentation/reference/releasing) for more information about
-releasing a new Google open source project.
+# About This Repository
 
-This template uses the Apache license, as is Google's default.  See the
-documentation for instructions on using alternate license.
+This is the offical repository for all kaggle related skills.
 
-## How to use this template
+# Creating a Basic Skill
 
-1. Clone it from GitHub.
-    * There is no reason to fork it.
-1. Create a new local repository and copy the files from this repo into it.
-1. Modify README.md and docs/contributing.md to represent your project, not the
-   template project.
-1. Develop your new project!
+Skills are simple to create - just a folder with a `SKILL.md` file containing YAML frontmatter and instructions. You can use the **template-skill** in this repository as a starting point:
 
-``` shell
-git clone https://github.com/google/new-project
-mkdir my-new-thing
-cd my-new-thing
-git init
-cp -r ../new-project/* ../new-project/.github .
-git add *
-git commit -a -m 'Boilerplate for new Google open source project'
+```markdown
+---
+name: my-skill-name
+description: A clear description of what this skill does and when to use it
+---
+
+# My Skill Name
+
+[Add your instructions here that Claude will follow when this skill is active]
+
+## Examples
+- Example usage 1
+- Example usage 2
+
+## Guidelines
+- Guideline 1
+- Guideline 2
 ```
 
-## Source Code Headers
+The frontmatter requires only two fields:
+- `name` - A unique identifier for your skill (lowercase, hyphens for spaces)
+- `description` - A complete description of what the skill does and when to use it
+
+# Source Code Headers
 
 Every file containing source code must include copyright and license
 information. This includes any JS/CSS files that you might be serving out to
