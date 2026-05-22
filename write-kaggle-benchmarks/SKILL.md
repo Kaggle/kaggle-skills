@@ -127,18 +127,6 @@ kaggle b t download my-task -o ./results
 kaggle b t list --name-regex "^math" --status errored
 ```
 
-## When to Load Reference Files
-Local files (siblings of this `SKILL.md` — view on GitHub at https://github.com/Kaggle/kaggle-skills/tree/main/write-kaggle-benchmarks/references):
-- `references/command-reference.md` — load when you need full per-command flags, the status output layout, the interactive model picker behavior, or filter options for list.
-- `references/troubleshooting.md` — load when a CLI invocation returns a `ValueError` or unexpected message, or when diagnosing why a run errored or produced no output.
-
-External source-of-truth references — fetch (or browse) these when the local files are insufficient:
-- **kaggle-benchmarks SDK** — https://github.com/Kaggle/kaggle-benchmarks
-  Load when you need to look up `@kbench.task` decorator options, `kbench.assertions`, the `llm.prompt` API, or `.evaluate()` semantics.
-- **kaggle-cli source** — https://github.com/Kaggle/kaggle-cli
-  Load when CLI behavior diverges from these docs, or when you need to inspect actual command implementations.
-- **Upstream CLI long-form reference** — https://github.com/Kaggle/kaggle-cli/blob/main/skills/references/benchmarks.md
-
 ## Gotchas
 Most of these are silent failures the agent will not detect on its own — review before generating any task file or CLI invocation.
 - **No `.run()` call → silent no-op**. The push will succeed even if the file has no `.run()` (push validation only checks for `@task` decorators). The task will then execute on the server and produce no `.run.json`, so nothing is recorded. Every task function must end with `task_fn.run(kbench.llm)` (or `.evaluate(...)`).
