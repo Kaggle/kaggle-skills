@@ -44,7 +44,19 @@ Custom paths: `--env-file <FILE>` and `--example-file <FILE>` for init.
 - `LLM_DEFAULT_EVAL`
 - `LLMS_AVAILABLE`
 
-## Core Workflow: Write → Validate → Push → Run → Status → Download
+## Core workflow: Init → Write → Validate → Push → Run → Status → Download
+
+### 0. Init (once per environment, re-run when creds expire)
+
+`init` fetches Model Proxy credentials, writes `.env`, and drops an
+`example_task.py` + `kaggle_benchmarks_reference.md` next to it. Every
+later step depends on the `MODEL_PROXY_*` vars it writes, so run it
+before anything else — and re-run it any time `python task.py` or
+`kaggle b t run` fails with an auth error (the API key is short-lived).
+
+```bash
+kaggle b init -y                      # first-time setup
+kaggle b auth -y                      # creds-only refresh (no scaffolding)
 
 ### 1. Write a task file
 A task file must:
