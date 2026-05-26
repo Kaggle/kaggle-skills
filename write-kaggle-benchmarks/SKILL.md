@@ -57,6 +57,7 @@ before anything else — and re-run it any time `python task.py` or
 ```bash
 kaggle b init -y                      # first-time setup
 kaggle b auth -y                      # creds-only refresh (no scaffolding)
+```
 
 ### 1. Write a task file
 A task file must:
