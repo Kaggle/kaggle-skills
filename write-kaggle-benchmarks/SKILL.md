@@ -1,6 +1,6 @@
 ---
 name: write-kaggle-benchmarks
-description: Write, push, run, and manage Kaggle Benchmark tasks using the kaggle CLI and the kaggle-benchmarks Python SDK. Use when the user wants to create or push a benchmark task, run benchmarks against LLM models, check task/run status, download results, or troubleshoot benchmark workflows. 
+description: Write, push, run, publish, and manage Kaggle Benchmark tasks using the kaggle CLI and the kaggle-benchmarks Python SDK. Use when the user wants to create or push a benchmark task (optionally with attached Kaggle datasets), run benchmarks against LLM models, check task/run status, stream or fetch execution logs, download results and source notebooks, publish a task to make it public, or troubleshoot benchmark workflows. 
 ---
 
 # Write Kaggle Benchmarks
@@ -23,7 +23,9 @@ kaggle benchmarks (alias: kaggle b)
     ├── run           — Run a task against model(s)
     ├── list          — List your benchmark tasks
     ├── status        — Show task details and per-model run status
-    ├── download      — Download completed run outputs
+    ├── download      — Download completed run outputs (and optionally source notebooks)
+    ├── log (logs)    — Show execution logs for run(s) (streams live for RUNNING runs)
+    ├── publish       — Make a task public (publishes the backing notebook by default)
     ├── models        — List available benchmark models
     └── delete        — Delete a task (not yet supported by server)
 ```
@@ -48,6 +50,16 @@ Custom paths: `--env-file <FILE>` and `--example-file <FILE>` for init.
 - `LLMS_AVAILABLE`
 
 ## Core workflow: Init → Write → Validate → Push → Run → Status → Download
+
+### Pacing — check in at every stage
+**Do NOT chain the full pipeline.** Treat each numbered step below as a checkpoint:
+
+1. State what you are about to do for the current step (one sentence, including the exact command you intend to run).
+2. Wait for the user's go-ahead before executing — including for steps that look "obvious" like `init` or `list`.
+3. After the step completes, show the relevant output, then **stop**. Do not auto-advance to the next step.
+4. Ask the user how they want to proceed: continue to the next documented step, change parameters, or branch off.
+
+If the user explicitly asks for "the whole pipeline" or "do everything", you may chain, but **summarize the planned chain in advance and ask for one confirmation covering the lot**, instead of skipping the per-step checkpoints silently.
 
 ### 0. Init (once per environment, re-run when creds expire)
 
@@ -101,8 +113,9 @@ If `python task.py` exits cleanly and `*.run.json` appears, the task is safe to 
 ### 3. Push
 ```bash
 kaggle b t push my-task -f task.py --wait
+kaggle b t push my-task -f task.py -d owner/dataset1 -d owner/dataset2   # attach datasets
 ```
-`--wait [TIMEOUT]` blocks until server-side creation finishes (no arg = indefinite). `--poll-interval <SECONDS>` controls polling (default 10s).
+`--wait [TIMEOUT]` blocks until server-side creation finishes (no arg = indefinite). `--poll-interval <SECONDS>` caps the polling interval (default 60s; polling starts at 5s and grows adaptively). Repeat `-d`/`--kaggle-dataset` once per dataset (do **not** space-separate; see the Gotchas).
 
 ### 4. Run
 ```bash
@@ -111,6 +124,9 @@ kaggle b t run my-task
 
 # Specific model
 kaggle b t run my-task -m google/gemini-3.5-flash
+
+# Multiple models (repeat -m, do NOT space-separate)
+kaggle b t run my-task -m google/gemini-3.5-flash -m anthropic/claude-haiku-4-5
 
 # Wait for completion
 kaggle b t run my-task -m google/gemini-3.5-flash --wait
@@ -122,25 +138,48 @@ List available models: `kaggle b t models`.
 kaggle b t status my-task
 kaggle b t status my-task -m google/gemini-3.5-flash
 ```
-For the full output format and error-section layout, see `references/command-reference.md`.
+Prints task metadata (slug, version, state, created timestamp, public flag, task URL) and a per-model run table. Errored runs render their final exception line under an `Errors:` section.
 
 ### 6. Download
 ```bash
 kaggle b t download my-task                       # all terminal runs
 kaggle b t download my-task -o ./results          # custom directory
 kaggle b t download my-task -m google/gemini-3.5-flash
+kaggle b t download my-task -s                    # also fetch source notebooks
+kaggle b t download my-task -f                    # force re-download (overwrite)
 ```
-Output layout: `<output>/<task>/<version>/<model>/<run_id>/....` Already-downloaded runs are skipped.
+Output layout: `<output>/<task>/<version>/<model>/<run_id>/....` Already-downloaded runs are skipped unless `--force`/`-f` is passed. With `--include-source`/`-s`, each run's directory also contains `__notebook__.ipynb` and `__notebook_source__.ipynb` alongside the regular outputs (useful for debugging the kernel session).
+
+### 7. Log
+```bash
+kaggle b t log my-task                            # logs for every run of the task
+kaggle b t log my-task -m google/gemini-3.5-flash # filter to one model
+kaggle b t log my-task -m model-a -m model-b      # multiple models, sequential
+```
+`RUNNING` runs stream live via SSE; `COMPLETED`/`ERRORED` runs print the persisted log in one shot; `QUEUED` runs print `(No logs available — server returned 404)` and continue.
+
+### 8. Publish
+```bash
+kaggle b t publish my-task                              # publish task + backing notebook (default)
+kaggle b t publish my-task --no-publish-backing-notebook  # publish task only, keep notebook private
+```
+Publishes both the task and the backing notebook by default. If the task is already public the command is a no-op for the task itself but will still publish the notebook unless `--no-publish-backing-notebook` is passed.
 
 ## Quick Recipes
+**Reminder**: these are reference snippets, not invocations to chain automatically. Per the "Pacing" section above, run them one at a time with user confirmation between each, unless the user explicitly asks you to chain them.
+
 ```bash
-# Push → run → download in one shot
-kaggle b t push my-task -f task.py --wait && \
-kaggle b t run my-task -m google/gemini-3.5-flash --wait && \
+# Push → run → download (run one command at a time, confirm between)
+kaggle b t push my-task -f task.py --wait
+kaggle b t run my-task -m google/gemini-3.5-flash --wait
 kaggle b t download my-task -o ./results
 
 # List tasks, filtered
 kaggle b t list --name-regex "^math" --status errored
+
+# Debug an errored run: pull logs first, then download source notebook
+kaggle b t log my-task -m google/gemini-3.5-flash
+kaggle b t download my-task -m google/gemini-3.5-flash -s -f
 ```
 
 ## Gotchas
@@ -151,3 +190,4 @@ Most of these are silent failures the agent will not detect on its own — revie
 - **Task slug must match a `@task` decorator**. `kaggle b t push <SLUG> -f file.py` fails if `<SLUG>` doesn't match the slugified name of some `@kbench.task(name=...)` (or function name) in the file. Names are normalized: `My Task` → `my-task`, `my_task` → `my-task`.
 - **Server returns model slugs with `@default` suffix sometimes** (e.g. `google/gemini-3.5-flash@default`). The CLI normalizes `@` → `-` for matching; user-facing commands should use the plain `owner/model` form.
 - **`delete` is not implemented server-side**. The command exists but currently prints `Delete is not supported by the server yet.`
+- **Repeated flags, not space-separated**. For multi-value flags (`-m`, `-d`/`--kaggle-dataset`), pass the flag once per value: `-m a -m b`, not `-m a b`. Space-separated form is **not** supported and will error.
