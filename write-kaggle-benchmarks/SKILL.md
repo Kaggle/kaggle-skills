@@ -1,9 +1,12 @@
 ---
 name: write-kaggle-benchmarks
-description: Write, push, run, and manage Kaggle Benchmark tasks using the kaggle CLI and the kaggle-benchmarks Python SDK. Use when the user wants to create or push a benchmark task, run benchmarks against LLM models, check task/run status, download results, or troubleshoot benchmark workflows. Keywords: kaggle benchmarks, benchmark task, kbench, model proxy, push task, run task.
+description: Write, push, run, and manage Kaggle Benchmark tasks using the kaggle CLI and the kaggle-benchmarks Python SDK. Use when the user wants to create or push a benchmark task, run benchmarks against LLM models, check task/run status, download results, or troubleshoot benchmark workflows. 
 ---
 
 # Write Kaggle Benchmarks
+
+## Keywords
+Kaggle benchmarks, write a benchmark, benchmark task, kbench, push task, run task.
 
 ## Official Resources
 - **SDK source & API** — https://github.com/Kaggle/kaggle-benchmarks
