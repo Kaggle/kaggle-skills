@@ -191,3 +191,4 @@ Most of these are silent failures the agent will not detect on its own — revie
 - **Server returns model slugs with `@default` suffix sometimes** (e.g. `google/gemini-3.5-flash@default`). The CLI normalizes `@` → `-` for matching; user-facing commands should use the plain `owner/model` form.
 - **`delete` is not implemented server-side**. The command exists but currently prints `Delete is not supported by the server yet.`
 - **Repeated flags, not space-separated**. For multi-value flags (`-m`, `-d`/`--kaggle-dataset`), pass the flag once per value: `-m a -m b`, not `-m a b`. Space-separated form is **not** supported and will error.
+- **CLI scope is tasks only, not benchmarks**. A *benchmark* is a curated collection of tasks. The CLI lets you create, push, and run individual tasks, but creating or managing benchmarks (collections) must be done on the Kaggle web UI.
