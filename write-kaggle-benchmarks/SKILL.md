@@ -30,49 +30,46 @@ kaggle benchmarks (alias: kaggle b)
     └── delete        — Delete a task (not yet supported by server)
 ```
 
-## Setup
-```bash
-# Full setup: credentials + .env + example_task.py + kaggle_benchmarks_reference.md
-kaggle b init -y
+## Setup (one confirmation, then autonomous)
 
-# Credentials only (refresh MODEL_PROXY_* in .env)
+Before running setup, summarize the steps below in one short message and ask the user:
+*"Run setup now? (installs/upgrades kaggle + kaggle-benchmarks, verifies auth, fetches Model Proxy creds)"*
+
+If the user confirms, run all four steps below without further prompts. If the user declines,
+stop and wait for direction. Re-run setup automatically (no re-confirmation) any time a later
+step fails with an auth/import error — all steps are idempotent and safe.
+
+### 1. Ensure latest CLI + SDK
+```bash
+pip install --upgrade kaggle kaggle-benchmarks
+```
+If `pip` is unavailable, fall back to `uv pip install --upgrade kaggle kaggle-benchmarks`.
+
+### 2. Verify Kaggle auth
+```bash
+kaggle config view >/dev/null 2>&1 || kaggle auth login
+```
+If `kaggle auth login` is invoked, surface the OAuth URL to the user and wait for them
+to complete the browser flow. This is the only setup step that may block on user action.
+
+### 3. Fetch Model Proxy credentials + scaffolding
+```bash
+kaggle b init -y          # writes .env, example_task.py, kaggle_benchmarks_reference.md
+# Creds-only refresh (use when MODEL_PROXY_API_KEY has expired):
 kaggle b auth -y
 ```
 
-Custom paths: `--env-file <FILE>` and `--example-file <FILE>` for init.
+### 4. Report and proceed
+Print one line summarizing what changed (packages upgraded, auth status, env vars refreshed),
+then continue to the workflow without waiting for further confirmation.
 
-### Env vars written by init:
-- `MODEL_PROXY_URL`
-- `MODEL_PROXY_API_KEY`
-- `MODEL_PROXY_EXPIRY_TIME`
-- `LLM_DEFAULT`
-- `LLM_DEFAULT_EVAL`
-- `LLMS_AVAILABLE`
+## Core workflow: Write → Validate → Push → Run → Status → Log → Download → Publish (optional)
 
-## Core workflow: Init → Write → Validate → Push → Run → Status → Download
-
-### Pacing — check in at every stage
-**Do NOT chain the full pipeline.** Treat each numbered step below as a checkpoint:
-
-1. State what you are about to do for the current step (one sentence, including the exact command you intend to run).
-2. Wait for the user's go-ahead before executing — including for steps that look "obvious" like `init` or `list`.
-3. After the step completes, show the relevant output, then **stop**. Do not auto-advance to the next step.
-4. Ask the user how they want to proceed: continue to the next documented step, change parameters, or branch off.
-
-If the user explicitly asks for "the whole pipeline" or "do everything", you may chain, but **summarize the planned chain in advance and ask for one confirmation covering the lot**, instead of skipping the per-step checkpoints silently.
-
-### 0. Init (once per environment, re-run when creds expire)
-
-`init` fetches Model Proxy credentials, writes `.env`, and drops an
-`example_task.py` + `kaggle_benchmarks_reference.md` next to it. Every
-later step depends on the `MODEL_PROXY_*` vars it writes, so run it
-before anything else — and re-run it any time `python task.py` or
-`kaggle b t run` fails with an auth error (the API key is short-lived).
-
-```bash
-kaggle b init -y                      # first-time setup
-kaggle b auth -y                      # creds-only refresh (no scaffolding)
-```
+### Pacing — check in at authoring & execution steps
+Setup is confirmed once up front and then runs to completion. `list`, `status`, and `log` are
+read-only — run them without asking. For Write / Validate / Push / Run / Download, treat
+each as a checkpoint: state the command, run it, show output, stop, and ask before
+advancing. Chain only if the user explicitly says so.
 
 ### 1. Write a task file
 A task file must:
@@ -140,7 +137,16 @@ kaggle b t status my-task -m google/gemini-3.5-flash
 ```
 Prints task metadata (slug, version, state, created timestamp, public flag, task URL) and a per-model run table. Errored runs render their final exception line under an `Errors:` section.
 
-### 6. Download
+### 6. Log
+*"Use this to confirm the run actually succeeded — status alone can show COMPLETED for a run that errored mid-stream."*
+```bash
+kaggle b t log my-task                            # logs for every run of the task
+kaggle b t log my-task -m google/gemini-3.5-flash # filter to one model
+kaggle b t log my-task -m model-a -m model-b      # multiple models, sequential
+```
+`RUNNING` runs stream live via SSE; `COMPLETED`/`ERRORED` runs print the persisted log in one shot; `QUEUED` runs print `(No logs available — server returned 404)` and continue.
+
+### 7. Download
 ```bash
 kaggle b t download my-task                       # all terminal runs
 kaggle b t download my-task -o ./results          # custom directory
@@ -150,15 +156,8 @@ kaggle b t download my-task -f                    # force re-download (overwrite
 ```
 Output layout: `<output>/<task>/<version>/<model>/<run_id>/....` Already-downloaded runs are skipped unless `--force`/`-f` is passed. With `--include-source`/`-s`, each run's directory also contains `__notebook__.ipynb` and `__notebook_source__.ipynb` alongside the regular outputs (useful for debugging the kernel session).
 
-### 7. Log
-```bash
-kaggle b t log my-task                            # logs for every run of the task
-kaggle b t log my-task -m google/gemini-3.5-flash # filter to one model
-kaggle b t log my-task -m model-a -m model-b      # multiple models, sequential
-```
-`RUNNING` runs stream live via SSE; `COMPLETED`/`ERRORED` runs print the persisted log in one shot; `QUEUED` runs print `(No logs available — server returned 404)` and continue.
-
-### 8. Publish
+### 8. Publish (optional)
+*"Optional. Tasks can stay private indefinitely — only publish when you want the task and its backing notebook to be visible to other Kaggle users."*
 ```bash
 kaggle b t publish my-task                              # publish task + backing notebook (default)
 kaggle b t publish my-task --no-publish-backing-notebook  # publish task only, keep notebook private
