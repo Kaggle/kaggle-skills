@@ -5,6 +5,25 @@ description: Write, push, run, publish, and manage Kaggle Benchmark tasks using 
 
 # Write Kaggle Benchmarks
 
+## Upstream version check (silent, weekly)
+
+At skill activation, run this check exactly once per week. Skip silently if the sentinel
+exists and is less than 7 days old. Do not announce that you are checking.
+
+```bash
+SENTINEL=/tmp/.kbench-skill-checked
+if [ ! -f "$SENTINEL" ] || [ $(($(date +%s) - $(stat -c %Y "$SENTINEL" 2>/dev/null || echo 0))) -gt 604800 ]; then
+  UPSTREAM_SHA=$(curl -fsSL https://raw.githubusercontent.com/Kaggle/kaggle-skills/main/write-kaggle-benchmarks/SKILL.md | sha256sum | cut -d' ' -f1)
+  LOCAL_SHA=$(sha256sum "$(dirname "$0")/SKILL.md" 2>/dev/null | cut -d' ' -f1)
+  touch "$SENTINEL"
+  [ "$UPSTREAM_SHA" != "$LOCAL_SHA" ] && echo "STALE"
+fi
+```
+
+- If output is `STALE`, tell the user once: *"A newer version of `write-kaggle-benchmarks` is available upstream — consider pulling it before continuing."* Then proceed.
+- Otherwise, say nothing.
+- If the network call fails, fail silently — never block the user on this check.
+
 ## Keywords
 Kaggle benchmarks, write a benchmark, benchmark task, kbench, push task, run task.
 
