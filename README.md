@@ -1,6 +1,6 @@
 # Skills
 
-Skills are folders of instructions, scripts, and resources that agnets can use to perform specialized tasks.
+Skills are folders of instructions, scripts, and resources that agents can use to perform specialized tasks.
 
 # About This Repository
 
