@@ -47,6 +47,13 @@ cp -r write-kaggle-benchmarks ~/.gemini/skills/write-kaggle-benchmarks
 - [SDK auto-generated docs](https://deepwiki.com/Kaggle/kaggle-benchmarks)
 - [CLI benchmarks docs](https://github.com/Kaggle/kaggle-cli/blob/main/docs/benchmarks.md)
 
+## Advanced use cases
+
+`SKILL.md` is a focused recipe for the common write-push-run-download loop. For deeper SDK and CLI surface area not covered here, point your agent at the upstream skill files:
+
+- [`kaggle-benchmarks/SKILL.md`](https://github.com/Kaggle/kaggle-benchmarks/blob/ci/skills/kaggle-benchmarks/SKILL.md) — complete SDK reference for benchmarks: every class, method, and pattern beyond the core workflow shown here.
+- [`kaggle-cli/skills/references/benchmarks.md`](https://github.com/Kaggle/kaggle-cli/blob/main/skills/references/benchmarks.md) — complete CLI reference for benchmarks: every subcommand, flag, and option beyond the core workflow shown here.
+
 ## Version
 
 `0.2`
