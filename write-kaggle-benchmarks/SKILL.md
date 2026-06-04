@@ -96,7 +96,7 @@ my_test_task.run(kbench.llm)
 ```
 
 #### LLM resolution precedence (highest → lowest):
-1. **Explicit model in code**: `task.run(llm=kbench.llms["google/gemini-3.5-flash"])`
+1. **Explicit model in code**: `task.run(llm=kbench.llms["gemini-2.5-pro"])`
 2. **Default in code**: `task.run(llm=kbench.llm)` (resolves to `LLM_DEFAULT`)
 3. **Env vars from .env** (`LLM_DEFAULT`, `LLMS_AVAILABLE`, `MODEL_PROXY_*`)
 
@@ -123,20 +123,20 @@ kaggle b t push my-task -f task.py -d owner/dataset1 -d owner/dataset2   # attac
 kaggle b t run my-task
 
 # Specific model
-kaggle b t run my-task -m google/gemini-3.5-flash
+kaggle b t run my-task -m gemini-2.5-pro
 
 # Multiple models (repeat -m, do NOT space-separate)
-kaggle b t run my-task -m google/gemini-3.5-flash -m anthropic/claude-haiku-4-5
+kaggle b t run my-task -m gemini-2.5-pro -m claude-sonnet-4
 
 # Wait for completion
-kaggle b t run my-task -m google/gemini-3.5-flash --wait
+kaggle b t run my-task -m gemini-2.5-pro --wait
 ```
 List available models: `kaggle b t models`.
 
 ### 5. Status
 ```bash
 kaggle b t status my-task
-kaggle b t status my-task -m google/gemini-3.5-flash
+kaggle b t status my-task -m gemini-2.5-pro
 ```
 Prints task metadata (slug, version, state, created timestamp, public flag, task URL) and a per-model run table. Errored runs render their final exception line under an `Errors:` section.
 
@@ -144,7 +144,7 @@ Prints task metadata (slug, version, state, created timestamp, public flag, task
 ```bash
 kaggle b t download my-task                       # all terminal runs
 kaggle b t download my-task -o ./results          # custom directory
-kaggle b t download my-task -m google/gemini-3.5-flash
+kaggle b t download my-task -m gemini-2.5-pro
 kaggle b t download my-task -s                    # also fetch source notebooks
 kaggle b t download my-task -f                    # force re-download (overwrite)
 ```
@@ -153,7 +153,7 @@ Output layout: `<output>/<task>/<version>/<model>/<run_id>/....` Already-downloa
 ### 7. Log
 ```bash
 kaggle b t log my-task                            # logs for every run of the task
-kaggle b t log my-task -m google/gemini-3.5-flash # filter to one model
+kaggle b t log my-task -m gemini-2.5-pro # filter to one model
 kaggle b t log my-task -m model-a -m model-b      # multiple models, sequential
 ```
 `RUNNING` runs stream live via SSE; `COMPLETED`/`ERRORED` runs print the persisted log in one shot; `QUEUED` runs print `(No logs available — server returned 404)` and continue.
@@ -171,15 +171,15 @@ Publishes both the task and the backing notebook by default. If the task is alre
 ```bash
 # Push → run → download (run one command at a time, confirm between)
 kaggle b t push my-task -f task.py --wait
-kaggle b t run my-task -m google/gemini-3.5-flash --wait
+kaggle b t run my-task -m gemini-2.5-pro --wait
 kaggle b t download my-task -o ./results
 
 # List tasks, filtered
 kaggle b t list --name-regex "^math" --status errored
 
 # Debug an errored run: pull logs first, then download source notebook
-kaggle b t log my-task -m google/gemini-3.5-flash
-kaggle b t download my-task -m google/gemini-3.5-flash -s -f
+kaggle b t log my-task -m gemini-2.5-pro
+kaggle b t download my-task -m gemini-2.5-pro -s -f
 ```
 
 ## Gotchas
@@ -188,7 +188,59 @@ Most of these are silent failures the agent will not detect on its own — revie
 - **`MODEL_PROXY_API_KEY` is short-lived**. If `python task.py` fails with an auth error, re-run `kaggle b auth -y` (or `kaggle b init -y`) to refresh.
 - **`init` / `auth` append to the env file**. Loaded via `dotenv` so last-wins makes re-running safe, but the file accumulates duplicate entries over time.
 - **Task slug must match a `@task` decorator**. `kaggle b t push <SLUG> -f file.py` fails if `<SLUG>` doesn't match the slugified name of some `@kbench.task(name=...)` (or function name) in the file. Names are normalized: `My Task` → `my-task`, `my_task` → `my-task`.
-- **Server returns model slugs with `@default` suffix sometimes** (e.g. `google/gemini-3.5-flash@default`). The CLI normalizes `@` → `-` for matching; user-facing commands should use the plain `owner/model` form.
+- **Use bare canonical model slugs** (e.g. `gemini-2.5-pro`, `claude-sonnet-4`). The CLI auto-normalizes input by stripping any provider prefix (`google/`, `anthropic/`) and replacing `@` with `-`, so `google/gemini-2.5-pro`, `anthropic/claude-haiku-4-5@20251001`, and `claude-sonnet-4-6@default` all work — but tables, error logs, and download directories always display the canonical form (e.g. `claude-haiku-4-5-20251001`). Standardize on the bare slug everywhere to keep commands, output, and paths consistent.
+- **Re-pushing without `-d` detaches previous datasets.** If a prior version of a task had Kaggle datasets attached, re-pushing without repeating the `-d` flags prints a yellow warning to stderr and silently detaches them. Always repeat the full `-d` list on each push.
+- **`-f -s` together to backfill source notebooks.** If you originally downloaded without `-s`, a follow-up `download -s` will skip cached runs and print a tip. Re-run with `-f -s` to overwrite cached runs and fetch their source notebooks.
+- **`log` is sequential, not interleaved.** When multiple runs are active, the CLI blocks on the first run's stream until it terminates before moving to the next. This prevents log interleaving but means you'll wait on one run at a time.
 - **`delete` is not implemented server-side**. The command exists but currently prints `Delete is not supported by the server yet.`
 - **Repeated flags, not space-separated**. For multi-value flags (`-m`, `-d`/`--kaggle-dataset`), pass the flag once per value: `-m a -m b`, not `-m a b`. Space-separated form is **not** supported and will error.
 - **CLI scope is tasks only, not benchmarks**. A *benchmark* is a curated collection of tasks. The CLI lets you create, push, and run individual tasks, but creating or managing benchmarks (collections) must be done on the Kaggle web UI.
+
+## SDK features beyond the basics
+
+These are higher-leverage `kaggle_benchmarks` patterns from the [task-writing skill](https://github.com/Kaggle/kaggle-benchmarks/blob/ci/skills/kaggle-benchmarks/SKILL.md). Reach for them when the minimal example isn't enough — and consult the upstream skill for full worked code.
+
+### Task definition rules
+- **`@kbench.benchmark` is an exact alias** for `@kbench.task`. Use whichever reads better.
+- **Return-type annotation is mandatory if the task returns a value.** `def score(llm) -> float:` — without `-> float` / `-> bool` / `-> dict` etc., the run object's `.result` typing breaks.
+- **`store_task=False` for sub-tasks.** If a `@kbench.task` is called from inside another task (e.g. a per-row scorer in a dataset eval), set `store_task=False` on the inner one to avoid persisting it as a top-level run.
+
+### Run object
+After `run = task_fn.run(...)`:
+- `run.passed` — `bool`, `True` if the result *and* every assertion passed.
+- `run.result` — the returned value (typed by the task's return annotation).
+- `run.assertion_results` — `list[AssertionResult]`, every recorded assertion.
+
+### Reasoning and temperature on `llm.prompt()`
+```python
+response = llm.prompt("Solve: 127 * 53?", reasoning="high")   # "low" | "medium" | "high"
+traces   = kbench.last_reasoning_traces()                     # str | None — may be None if disabled/unsupported
+response = llm.prompt("Write a creative story.", temperature=0.7)   # default 0
+```
+Always null-check `last_reasoning_traces()` before using it.
+
+### Multimodal inputs
+```python
+from kaggle_benchmarks.content_types import videos, audios
+video = videos.from_url("https://www.youtube.com/watch?v=...")   # Gemini 2.5+ only
+audio = audios.from_path("speech.mp3")
+```
+
+### Branching and isolating chat histories
+- `chats.fork("name")` — copy current history into a temporary branch; the original chat is untouched on exit.
+- `contexts.enter(chat=...)` — low-level swap of the active chat for fully isolated agent histories. Use this only when `ChatRoom` doesn't fit (e.g. agents that must not see each other).
+
+### Multi-agent: `ChatRoom` + `Participant` (Pattern I.5)
+For debate / hidden-role / negotiation flows, prefer `kbench.ChatRoom` over hand-rolled `contexts.enter()` wiring. Each participant sees a perspective-projected transcript; the same `kbench.llm` can back many participants.
+```python
+room = kbench.ChatRoom(system_prompt="A structured 2-turn debate.")
+pro  = room.add_participant(llm, name="Pro", system_prompt="Argue FOR.")
+con  = room.add_participant(llm, name="Con", system_prompt="Argue AGAINST.")
+pro.reply()
+con.reply()
+```
+See [`docs/chatroom/rooms_walkthrough.md`](https://github.com/Kaggle/kaggle-benchmarks/blob/ci/docs/chatroom/rooms_walkthrough.md) in the kaggle-benchmarks repo for a full walkthrough.
+
+### Custom assertions
+- `@assertion_handler()` — decorate a function to register it as a custom assertion (returns/raises an `AssertionResult`). Use `@assertion_handler(raises_assertion_error=True)` to fail loudly on mismatch.
+- `kbench.assertions.assert_tool_was_invoked(fn)` — verify the model actually called a registered tool during the prompt.
