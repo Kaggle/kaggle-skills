@@ -221,10 +221,23 @@ Always null-check `last_reasoning_traces()` before using it.
 
 ### Multimodal inputs
 ```python
-from kaggle_benchmarks.content_types import videos, audios
-video = videos.from_url("https://www.youtube.com/watch?v=...")   # Gemini 2.5+ only
+from kaggle_benchmarks.content_types import images, videos, audios
+
+# Images: from_url / from_path / from_base64
+img = images.from_url("https://example.com/cat.jpg")     # llm.prompt auto-downloads + base64-encodes
+img = images.from_path("local/chart.png")                # read + base64 immediately
+img = images.from_base64(b64_str, format="png")          # default format="jpeg"
+
+# Videos: YouTube URLs only (no local files, no non-YouTube URLs); select Gemini models only
+video = videos.from_url("https://www.youtube.com/watch?v=...")
+
+# Audio
 audio = audios.from_path("speech.mp3")
+
+response = llm.prompt("Describe this", image=img)
 ```
+- `llm.prompt(...)` auto-downloads image URLs to base64 (safe for non-URL-capable models). `user.send(...)` passes the raw URL through — use it to test native URL fetching, but it'll fail on models that don't support it.
+- Video input is **YouTube-only** and limited to specific Gemini models; local files or non-YouTube URLs will error.
 
 ### Branching and isolating chat histories
 - `chats.fork("name")` — copy current history into a temporary branch; the original chat is untouched on exit.
