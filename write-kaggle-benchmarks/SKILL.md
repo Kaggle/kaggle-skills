@@ -96,7 +96,7 @@ my_test_task.run(kbench.llm)
 ```
 
 #### LLM resolution precedence (highest → lowest):
-1. **Explicit model in code**: `task.run(llm=kbench.llms["gemini-2.5-pro"])`
+1. **Explicit model in code**: `task.run(llm=kbench.llms["gemini-3.5-flash"])`
 2. **Default in code**: `task.run(llm=kbench.llm)` (resolves to `LLM_DEFAULT`)
 3. **Env vars from .env** (`LLM_DEFAULT`, `LLMS_AVAILABLE`, `MODEL_PROXY_*`)
 
@@ -123,20 +123,20 @@ kaggle b t push my-task -f task.py -d owner/dataset1 -d owner/dataset2   # attac
 kaggle b t run my-task
 
 # Specific model
-kaggle b t run my-task -m gemini-2.5-pro
+kaggle b t run my-task -m gemini-3.5-flash
 
 # Multiple models (repeat -m, do NOT space-separate)
-kaggle b t run my-task -m gemini-2.5-pro -m claude-sonnet-4
+kaggle b t run my-task -m gemini-3.5-flash -m claude-haiku-4-5
 
 # Wait for completion
-kaggle b t run my-task -m gemini-2.5-pro --wait
+kaggle b t run my-task -m gemini-3.5-flash --wait
 ```
 List available models: `kaggle b t models`.
 
 ### 5. Status
 ```bash
 kaggle b t status my-task
-kaggle b t status my-task -m gemini-2.5-pro
+kaggle b t status my-task -m gemini-3.5-flash
 ```
 Prints task metadata (slug, version, state, created timestamp, public flag, task URL) and a per-model run table. Errored runs render their final exception line under an `Errors:` section.
 
@@ -144,7 +144,7 @@ Prints task metadata (slug, version, state, created timestamp, public flag, task
 ```bash
 kaggle b t download my-task                       # all terminal runs
 kaggle b t download my-task -o ./results          # custom directory
-kaggle b t download my-task -m gemini-2.5-pro
+kaggle b t download my-task -m gemini-3.5-flash
 kaggle b t download my-task -s                    # also fetch source notebooks
 kaggle b t download my-task -f                    # force re-download (overwrite)
 ```
@@ -153,7 +153,7 @@ Output layout: `<output>/<task>/<version>/<model>/<run_id>/....` Already-downloa
 ### 7. Log
 ```bash
 kaggle b t log my-task                            # logs for every run of the task
-kaggle b t log my-task -m gemini-2.5-pro # filter to one model
+kaggle b t log my-task -m gemini-3.5-flash # filter to one model
 kaggle b t log my-task -m model-a -m model-b      # multiple models, sequential
 ```
 `RUNNING` runs stream live via SSE; `COMPLETED`/`ERRORED` runs print the persisted log in one shot; `QUEUED` runs print `(No logs available — server returned 404)` and continue.
@@ -171,15 +171,15 @@ Publishes both the task and the backing notebook by default. If the task is alre
 ```bash
 # Push → run → download (run one command at a time, confirm between)
 kaggle b t push my-task -f task.py --wait
-kaggle b t run my-task -m gemini-2.5-pro --wait
+kaggle b t run my-task -m gemini-3.5-flash --wait
 kaggle b t download my-task -o ./results
 
 # List tasks, filtered
 kaggle b t list --name-regex "^math" --status errored
 
 # Debug an errored run: pull logs first, then download source notebook
-kaggle b t log my-task -m gemini-2.5-pro
-kaggle b t download my-task -m gemini-2.5-pro -s -f
+kaggle b t log my-task -m gemini-3.5-flash
+kaggle b t download my-task -m gemini-3.5-flash -s -f
 ```
 
 ## Gotchas
@@ -188,7 +188,7 @@ Most of these are silent failures the agent will not detect on its own — revie
 - **`MODEL_PROXY_API_KEY` is short-lived**. If `python task.py` fails with an auth error, re-run `kaggle b auth -y` (or `kaggle b init -y`) to refresh.
 - **`init` / `auth` append to the env file**. Loaded via `dotenv` so last-wins makes re-running safe, but the file accumulates duplicate entries over time.
 - **Task slug must match a `@task` decorator**. `kaggle b t push <SLUG> -f file.py` fails if `<SLUG>` doesn't match the slugified name of some `@kbench.task(name=...)` (or function name) in the file. Names are normalized: `My Task` → `my-task`, `my_task` → `my-task`.
-- **Use bare canonical model slugs** (e.g. `gemini-2.5-pro`, `claude-sonnet-4`). The CLI auto-normalizes input by stripping any provider prefix (`google/`, `anthropic/`) and replacing `@` with `-`, so `google/gemini-2.5-pro`, `anthropic/claude-haiku-4-5@20251001`, and `claude-sonnet-4-6@default` all work — but tables, error logs, and download directories always display the canonical form (e.g. `claude-haiku-4-5-20251001`). Standardize on the bare slug everywhere to keep commands, output, and paths consistent.
+- **Use bare canonical model slugs** (e.g. `gemini-3.5-flash`, `claude-haiku-4-5`). The CLI auto-normalizes input by stripping any provider prefix (`google/`, `anthropic/`) and replacing `@` with `-`, so `google/gemini-3.5-flash`, `anthropic/claude-haiku-4-5@20251001`, and `claude-haiku-4-5-6@default` all work — but tables, error logs, and download directories always display the canonical form (e.g. `claude-haiku-4-5-20251001`). Standardize on the bare slug everywhere to keep commands, output, and paths consistent.
 - **Re-pushing without `-d` detaches previous datasets.** If a prior version of a task had Kaggle datasets attached, re-pushing without repeating the `-d` flags prints a yellow warning to stderr and silently detaches them. Always repeat the full `-d` list on each push.
 - **`-f -s` together to backfill source notebooks.** If you originally downloaded without `-s`, a follow-up `download -s` will skip cached runs and print a tip. Re-run with `-f -s` to overwrite cached runs and fetch their source notebooks.
 - **`log` is sequential, not interleaved.** When multiple runs are active, the CLI blocks on the first run's stream until it terminates before moving to the next. This prevents log interleaving but means you'll wait on one run at a time.
