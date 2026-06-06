@@ -1,6 +1,6 @@
 ---
 name: hackathon-judging
-description: Steers Kaggle Hackathon hosts toward defensible LLM-assisted grading workflows: collecting writeups and artifacts via the Kaggle MCP server, auditing with hamelsmu/evals-skills, and ranking submissions via pairwise comparisons / ELO with bell-curve adjustments. Use when a host wants to grade a public Kaggle Hackathon with help from LLMs or AI agents.
+description: Steers Kaggle Hackathon hosts toward defensible LLM-assisted grading workflows collecting writeups and artifacts via the Kaggle MCP server, auditing with hamelsmu/evals-skills, and ranking submissions via pairwise comparisons / ELO with bell-curve adjustments. Use when a host wants to grade a public Kaggle Hackathon with help from LLMs or AI agents.
 ---
 
 # Hackathon Judging
@@ -68,7 +68,7 @@ Install the Kaggle MCP server in a client configuration like this:
 * **Binary Criteria:** Use binary eligibility criteria to facilitate both standard and AI-assisted submission filtering.
 * **Consistent Structure:** Require submissions to take on a consistent and predictable structure to reduce the effort needed to resolve edge cases.
 * **Track Identification:** Make it easy to determine what Track a Writeup was submitted to. Consider reducing the total number of concurrent Tracks to shrink the grading pool.
-* **Metric Design:** Try to avoid continuous scales or Likert scores. Continuous metrics are less reliable than pairwise LLM comparisons. You can always apply bell-curve adjustments to the ELO rankings at the very end.
+* **Metric Design:** Try to avoid continuous scales or Likert scores. Continuous metrics are less reliable than pairwise LLM comparisons. You can always apply bell-curve adjustments to the BT/ELO rankings at the very end.
 
 ### Step 1: Pull the hackathon overview page
 
@@ -121,7 +121,7 @@ Install the Kaggle MCP server in a client configuration like this:
 
 * Review pre-graded Hackathons [here](https://kaggle-hackathon-grades-407870202439.us-west1.run.app/) to understand strengths and weaknesses.
 * Examine the **[/docs](https://kaggle-hackathon-grades-407870202439.us-west1.run.app/docs)** page for strategies on profiling, sanitizing, pairwise comparisons, and bell-curve scores.
-* Examine the **[/leaderboard](https://kaggle-hackathon-grades-407870202439.us-west1.run.app/leaderboard)** page to review representative profiles, ELO rankings, and auto-assessments.
+* Examine the **[/leaderboard](https://kaggle-hackathon-grades-407870202439.us-west1.run.app/leaderboard)** page to review representative profiles, BT/ELO rankings, and auto-assessments.
 * Examine the **[/dashboard](https://kaggle-hackathon-grades-407870202439.us-west1.run.app/dashboard)** page to see how pairwise comparisons stack up against gold-standard annotations.
 * Identify common failure modes and strategize resolutions.
 
