@@ -1,0 +1,39 @@
+{
+  "task_id": "sohier-20260617220004-e58fce2c",
+  "agent_type": "claude",
+  "session_id": "eca39813-fdb7-49bd-a7ea-ad9ad279711f",
+  "updated_at": "2026-06-17T22:11:09Z",
+  "resume_command": "claude --resume eca39813-fdb7-49bd-a7ea-ad9ad279711f",
+  "usage": {
+    "total_cost_usd": 3.2503452999999998,
+    "input_tokens": 1805,
+    "output_tokens": 67074,
+    "cache_read_input_tokens": 4301016,
+    "cache_creation_input_tokens": 314170,
+    "duration_ms": 623726,
+    "duration_api_ms": 718230,
+    "num_turns": 47,
+    "model_usage": {
+      "claude-opus-4-8@default": {
+        "inputTokens": 94,
+        "outputTokens": 44454,
+        "cacheReadInputTokens": 4301016,
+        "cacheCreationInputTokens": 314170,
+        "webSearchRequests": 0,
+        "costUSD": 3.1355342999999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5@20251001": {
+        "inputTokens": 1711,
+        "outputTokens": 22620,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.11481100000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    }
+  }
+}
