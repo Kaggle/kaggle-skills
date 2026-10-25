@@ -4,7 +4,7 @@ Skills are folders of instructions, scripts, and resources that agents can use t
 
 # About This Repository
 
-This is the offical repository for all kaggle related skills.
+This is the official repository for all kaggle related skills.
 
 # Creating a Basic Skill
 
